@@ -1,5 +1,87 @@
+public void gerarFatura(Imovel imovel, double leituraAtual) {
+        Imovel imovelEncontrado = encontrarImovelPorMatricula(imovel.getMatricula());
 
-public void menuFaturas() {
+        if (imovelEncontrado != null) {
+            double ultimaLeitura = imovelEncontrado.getUltimaLeitura();
+            double penultimaLeitura = imovelEncontrado.getPenultimaLeitura();
+            Fatura fatura = new Fatura(new Date(), ultimaLeitura, penultimaLeitura, leituraAtual);
+            faturas.add(fatura);
+            imovelEncontrado.setPenultimaLeitura(ultimaLeitura);
+            imovelEncontrado.setUltimaLeitura(leituraAtual);
+        }
+    }
+
+    public List<Fatura> listarFaturasEmAberto() {
+        List<Fatura> faturasEmAberto = new ArrayList<>();
+        for (Fatura f : faturas) {
+            if (!f.isQuitado()) {
+                faturasEmAberto.add(f);
+            }
+        }
+        return faturasEmAberto;
+    }
+
+    public void registrarPagamento(Fatura fatura, double valorPago) {
+        if (!fatura.isQuitado()) {
+            Pagamento pagamento = new Pagamento(new Date(), valorPago);
+            pagamentos.add(pagamento);
+
+            double valorRestante = fatura.getValor() - valorPago;
+            if (valorRestante <= 0) {
+                fatura.setQuitado(true);
+                if (valorRestante < 0) {
+                    Reembolso reembolso = new Reembolso(new Date(), Math.abs(valorRestante));
+                    reembolsos.add(reembolso);
+                }
+            }
+        }
+    }
+
+    public List<Pagamento> listarPagamentos() {
+        return pagamentos;
+    }
+
+    public void registrarFalha(Falha falha) {
+        falhas.add(falha);
+        if (falha instanceof FalhaDistribuicao) {
+            FalhaDistribuicao falhaDistribuicao = (FalhaDistribuicao) falha;
+            Reparo reparo = new Reparo(falhaDistribuicao, "Reparo necessário", new Date(), null, false);
+            reparos.add(reparo);
+        }
+    }
+
+    public List<Reparo> listarReparosEmAberto() {
+        List<Reparo> reparosEmAberto = new ArrayList<>();
+        for (Reparo r : reparos) {
+            if (!r.isFinalizado()) {
+                reparosEmAberto.add(r);
+            }
+        }
+        return reparosEmAberto;
+    }
+
+    public void encerrarReparo(Reparo reparo, boolean resolvido, String descricao) {
+        reparo.setFinalizado(true);
+        reparo.setResolvido(resolvido);
+        reparo.setDataFim(new Date());
+        if (!resolvido) {
+            Falha falha = reparo.getFalhaAssociada();
+            FalhaDistribuicao falhaDistribuicao = (FalhaDistribuicao) falha;
+            Reparo novoReparo = new Reparo(falhaDistribuicao, descricao, new Date(), null, false);
+            reparos.add(novoReparo);
+        }
+    }
+
+    private Imovel encontrarImovelPorMatricula(int matricula) {
+        for (Imovel i : imoveis) {
+            if (i.getMatricula() == matricula) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    public void menuFaturas() {
         Scanner scanner = new Scanner(System.in);
         int opcao;
 
@@ -8,7 +90,8 @@ public void menuFaturas() {
             System.out.println("1. Consultar fatura por matrícula");
             System.out.println("2. Listar todas as faturas");
             System.out.println("3. Listar faturas em aberto");
-            System.out.println("4. Voltar ao menu principal");
+            System.out.println("4. Criar fatura");
+            System.out.println("5. Voltar ao menu principal");
             System.out.print("Escolha uma opção: ");
             opcao = scanner.nextInt();
 
@@ -25,21 +108,35 @@ public void menuFaturas() {
                     listarFaturasEmAberto();
                     break;
                 case 4:
+                    System.out.println("Criando nova fatura...");
+                    System.out.print("Digite a matrícula do imóvel: ");
+                    int matriculaImovel = scanner.nextInt();
+                    System.out.print("Digite a leitura atual: ");
+                    double leituraAtual = scanner.nextDouble();
+                    Imovel imovel = encontrarImovelPorMatricula(matriculaImovel);
+                    if (imovel != null) {
+                        gerarFatura(imovel, leituraAtual);
+                        System.out.println("Fatura criada com sucesso para o imóvel de matrícula " + matriculaImovel);
+                    } else {
+                        System.out.println("Imóvel não encontrado para a matrícula " + matriculaImovel);
+                    }
+                    break;
+                case 5:
                     System.out.println("Voltando ao menu principal...");
                     break;
                 default:
                     System.out.println("Opção inválida. Escolha novamente.");
             }
-        } while (opcao != 4);
+        } while (opcao != 5);
     }
 
     private void consultarFaturaPorMatricula(int matricula) {
         Imovel imovelEncontrado = encontrarImovelPorMatricula(matricula);
         if (imovelEncontrado != null) {
-            System.out.println("Faturas para a matrícula " + matricula + ":");
+            System.out.println("Faturas para a matrícula " + matricula);
             for (Fatura fatura : faturas) {
-                if (fatura.getImovel().equals(imovelEncontrado)) {
-                    System.out.println(fatura.getData() + " - Valor: " + fatura.getValor() + " - Quitado: " + (fatura.isQuitado() ? "Sim" : "Não"));
+                if (fatura.getImovel() == imovelEncontrado) {
+                    System.out.println("Data: " + fatura.getData() + " - Valor: " + fatura.getValor());
                 }
             }
         } else {
@@ -50,7 +147,7 @@ public void menuFaturas() {
     private void listarTodasAsFaturas() {
         System.out.println("Todas as faturas:");
         for (Fatura fatura : faturas) {
-            System.out.println(fatura.getData() + " - Valor: " + fatura.getValor() + " - Quitado: " + (fatura.isQuitado() ? "Sim" : "Não"));
+            System.out.println("Data: " + fatura.getData() + " - Valor: " + fatura.getValor());
         }
     }
 
@@ -143,11 +240,12 @@ class Fatura {
 
     private static final double CUSTO_POR_KWH = 0.5;
 
-    public Fatura(Date data, double ultimaLeitura, double penultimaLeitura, double leituraAtual) {
+    public Fatura(Date data, double ultimaLeitura, double penultimaLeitura, double leituraAtual, Imovel imovel) {
         this.data = data;
         this.ultimaLeitura = ultimaLeitura;
         this.penultimaLeitura = penultimaLeitura;
         this.quitado = false;
+        this.imovel = imovel;
         calcularValorFatura(leituraAtual);
     }
 
@@ -176,6 +274,10 @@ class Fatura {
     public void setImovel(Imovel imovel) {
         this.imovel = imovel;
     }
+
+    public Date getData() {
+        return data;
+    }
 }
 
 class Pagamento {
@@ -191,16 +293,8 @@ class Pagamento {
         return data;
     }
 
-    public void setData(Date data) {
-        this.data = data;
-    }
-
     public double getValor() {
         return valor;
-    }
-
-    public void setValor(double valor) {
-        this.valor = valor;
     }
 }
 
@@ -217,16 +311,8 @@ class Reembolso {
         return data;
     }
 
-    public void setData(Date data) {
-        this.data = data;
-    }
-
     public double getValor() {
         return valor;
-    }
-
-    public void setValor(double valor) {
-        this.valor = valor;
     }
 }
 
@@ -243,16 +329,8 @@ class Falha {
         return descricao;
     }
 
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
-    }
-
     public Date getDataRegistro() {
         return dataRegistro;
-    }
-
-    public void setDataRegistro(Date dataRegistro) {
-        this.dataRegistro = dataRegistro;
     }
 }
 
@@ -266,10 +344,6 @@ class FalhaDistribuicao extends Falha {
 
     public String getLocalAfetado() {
         return localAfetado;
-    }
-
-    public void setLocalAfetado(String localAfetado) {
-        this.localAfetado = localAfetado;
     }
 }
 
