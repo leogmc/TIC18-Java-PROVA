@@ -1,7 +1,7 @@
 <img src="https://brandslogos.com/wp-content/uploads/images/java-logo-1.png" alt="Logo do JAVA" width="70" height="70" align="left"> <h2>MÓDULO JAVA</h2>
 <hr>
 
-Este repositório é destinado a PROVA DE JAVA, onde desenvolvemos habilidades em programação utilizando a linguagem JAVA.
+Este repositório é destinado a PROVA DE JAVA, onde desenvolvemos habilidades em programação.
 
 <h3>GRUPO T2</h3>
 
