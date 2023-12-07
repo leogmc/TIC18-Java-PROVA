@@ -10,7 +10,7 @@ import entidades.Reparo;
 import util.TipoFalha;
 
 public class MenuFalhasReparos {
-
+    
     private List<Falha> falhas;
     private List<Reparo> reparos;
     private List<Imovel> imoveis;
@@ -101,6 +101,8 @@ public class MenuFalhasReparos {
             if (!reparo.isResolvido()) {
                 System.out.println("ID do Reparo: " + reparo.getId());
                 System.out.println("Descrição da Atividade: " + reparo.getDescricaoAtividade());
+                System.out.println("Data de Início: " + reparo.getDataInicio().getTime());
+                System.out.println("Data de Fim: " + (reparo.getDataFim() == null ? "Em aberto" : reparo.getDataFim().getTime()));
                 System.out.println("------------------------------------");
             }
         }
@@ -115,18 +117,68 @@ public class MenuFalhasReparos {
         System.out.println("Digite o ID do reparo a ser encerrado: ");
         int idReparo = scanner.nextInt();
         scanner.nextLine(); // Consumir a quebra de linha
-
+    
         Reparo reparo = encontrarReparoPorId(idReparo);
-
+    
         if (reparo != null && !reparo.isResolvido()) {
             reparo.setResolvido(true);
             reparo.setDataFim(Calendar.getInstance());
-
-            System.out.println("Reparo encerrado com sucesso.");
+    
+            // Verifica se a falha foi resolvida
+            if (falhaFoiResolvida()) {
+                System.out.println("Reparo encerrado com sucesso.");
+            } else {
+                System.out.println("Reparo não resolveu a falha. Iniciando próximo reparo...");
+                iniciarProximoReparo(reparo);
+            }
         } else {
             System.out.println("Reparo não encontrado ou já encerrado.");
         }
     }
+
+    private boolean falhaFoiResolvida() {
+        System.out.println("A falha associada a este reparo foi resolvida? (Digite 'sim' ou 'nao'): ");
+        String respostaUsuario = scanner.nextLine().toLowerCase();
+    
+        if (respostaUsuario.equals("sim")) {
+            return true;
+        } else if (respostaUsuario.equals("nao")) {
+            return false;
+        } else {
+            System.out.println("Resposta inválida. Assume-se que a falha não foi resolvida.");
+            return false;
+        }
+    }
+
+    private void iniciarProximoReparo(Reparo reparoAtual) {
+        // Lógica para iniciar o próximo reparo mais avançado
+        System.out.println("Iniciando próximo reparo mais avançado...");
+
+        System.out.println("Descrição do próximo reparo: ");
+        String descricaoProximoReparo = scanner.nextLine();
+    
+        // Crie o próximo reparo
+        Reparo proximoReparo = new Reparo(
+                reparoAtual.getId() + 1,
+                reparoAtual.getIdFalha(),
+                descricaoProximoReparo, 
+                Calendar.getInstance(),
+                null,
+                false
+        );
+    
+        // Atualize a referência ao próximo reparo no reparo atual
+        reparoAtual.setProximoReparo(proximoReparo);
+    
+        // Adicione o próximo reparo à lista de reparos
+        reparos.add(proximoReparo);
+    
+        // Informe ao usuário que o próximo reparo foi iniciado
+        System.out.println("Próximo reparo mais avançado iniciado com sucesso.");
+    }
+    
+
+        
     
     private Imovel encontrarImovelPorMatricula(String matricula) {
         for (Imovel imovel : imoveis) {

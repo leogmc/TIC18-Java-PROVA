@@ -10,6 +10,7 @@ public class Reparo {
     private Calendar dataInicio;
     private Calendar dataFim;
     private boolean resolvido;
+	private Reparo proximoReparo;  // Nova propriedade para referenciar o próximo reparo
 
     // Construtor que aceita parâmetros
     public Reparo(int id, int idFalha, String descricaoAtividade, Calendar dataInicio, Calendar dataFim, boolean resolvido) {
@@ -19,6 +20,7 @@ public class Reparo {
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
         this.resolvido = resolvido;
+		this.proximoReparo = null;
     }
 
 	public int getId() {
@@ -68,6 +70,21 @@ public class Reparo {
 	public void setResolvido(boolean resolvido) {
 		this.resolvido = resolvido;
 	}
+
+	public Reparo getProximoReparo() {
+        return proximoReparo;
+    }
+
+    public void setProximoReparo(Reparo proximoReparo) {
+        this.proximoReparo = proximoReparo;
+    }
+
+	public void iniciarProximoReparo() {
+        if (proximoReparo != null) {
+            proximoReparo.setDataInicio(Calendar.getInstance());
+            proximoReparo.setResolvido(false);
+        }
+    }
     
     
 }
